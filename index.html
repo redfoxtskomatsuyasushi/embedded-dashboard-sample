@@ -13,16 +13,6 @@
     $(document).ready(function () {
         
         var awsData = {
-            cognitoAuthenticatedUserName:'<cognito userpool username>',
-            cognitoAuthenticatedUserPassword:'<cognito userpool password>',
-            dashboardId: getParameterValues('dashboardid'),
-            region:'<AWS region where cognito userpool and quicksight dashboard exists>',
-            cognitoIdentityPoolId:'<identitypool id>',
-            cognitoAuthenticatedUserPoolId:'<userpool id>',
-            cognitoAuthenticatedClientId:'<cognito userpool clientid>',
-            roleSessionName: '<session identifier>',
-            apiGatewayUrl:'https://<APIGateway rool url>/prod/getDashboardEmbedURL?',
-            cognitoAuthenticatedLogins: 'cognito-idp.<region>.amazonaws.com/<userpoolid>'
             region:'ap-northeast-1',
             apiGatewayUrl:'https://xriwc32mxk.execute-api.ap-northeast-1.amazonaws.com/prod/getDashboardEmbedURL',
         }
@@ -63,71 +53,14 @@
         function embedDashboardCognitoAuthenticated(awsData) {
             AWS.config.update({ region: awsData.region });
 
-            const cognitoUser = getCognitoUser(awsData.cognitoAuthenticatedUserPoolId, awsData.cognitoAuthenticatedClientId, awsData.cognitoAuthenticatedUserName);
-            const authenticationDetails = getAuthenticationDetails(awsData.cognitoAuthenticatedUserName, awsData.cognitoAuthenticatedUserPassword);
-
-            cognitoUser.authenticateUser(authenticationDetails, {
-                onSuccess: (result) => {
-                    console.log(result);
-                    const cognitoIdentity = new AWS.CognitoIdentity();
-
-                    const getIdParams = {
-                        IdentityPoolId: awsData.cognitoIdentityPoolId,
-                        Logins: {[awsData.cognitoAuthenticatedLogins]: result.idToken.jwtToken}
-                    };
-
-                    cognitoIdentity.getId(getIdParams, (err, data) => {
-                        if (err) {
-                            console.log('Error obtaining Cognito ID.');
-                        } else {
-                            data.Logins = {[awsData.cognitoAuthenticatedLogins]: result.idToken.jwtToken};
-
-                            cognitoIdentity.getOpenIdToken(data, (err, openIdToken) => {
-                                if (err) {
-                                    console.log('Error obtaining authentication token.');
-                                } else {
-                                    apiGatewayGetDashboardEmbedUrl(
-                                        awsData.apiGatewayUrl, 
-                                        awsData.dashboardId, 
-                                        openIdToken.Token, 
-                                        true, 
-                                        awsData.roleSessionName, 
-                                        false, 
-                                        false
-                                    );
-                                }
-                            });
-                        }
-                    });
-                },
-
-                onFailure: function(err) {
-                    console.log('Error authenticating user.');
-                }
-            });
+            apiGatewayGetDashboardEmbedUrl(
+                awsData.apiGatewayUrl, 
+            );
         }
 
         function apiGatewayGetDashboardEmbedUrl(
             apiGatewayUrl, 
-            dashboardId, 
-            openIdToken, 
-            authenticated, 
-            sessionName, 
-            resetDisabled, 
-            undoRedoDisabled
         ) {
-            const parameters = {
-                dashboardId: dashboardId,
-                openIdToken: openIdToken,
-                authenticated: authenticated,
-                sessionName: sessionName,
-                resetDisabled: resetDisabled,
-                undoRedoDisabled: undoRedoDisabled
-            }
-
-            const myQueryString = $.param(parameters);
-            apiGatewayUrl = apiGatewayUrl + myQueryString;
-
             const headers = { 'Content-Type' : 'application/json' }
 
             axios.get(apiGatewayUrl, { headers: headers})
@@ -137,36 +70,6 @@
                 .catch(function (error) {
                     console.log('Error obtaining QuickSight dashboard embed url.');
                 });
-        }
-
-        /**
-         * TODO - Move authentication functions to its own class.
-         */
-        function getCognitoUser(userPoolId, clientId, userName ) {
-            // Step 1: Get user pool.
-            const poolData = {
-                UserPoolId: userPoolId,
-                ClientId: clientId
-            };
-            const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-
-            // Step 2: Get cognito user.
-            const userData = {
-                Username: userName,
-                Pool: userPool
-            };
-            return new AmazonCognitoIdentity.CognitoUser(userData);
-        }
-
-        /**
-         * TODO - Move authentication functions to its own class.
-         */
-        function getAuthenticationDetails(userName, userPassword) {
-            const authenticationData = {
-                Username: userName,
-                Password: userPassword
-            };
-            return new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
         }
     });
     </Script>
