@@ -14,10 +14,10 @@
         var awsData = {
             region: 'ap-northeast-1',
             apiGatewayUrl: 'https://i2t9q78ae2.execute-api.ap-northeast-1.amazonaws.com/Prod/dashboard_embed_url?',
-            userName: 'hattori', 
-            email: 'hattori@redfox.co.jp', 
-            companyName: 'redfox', 
-            groupName: 'sales', 
+            userName: getParameterValues('user'),
+            email: getParameterValues('email'),
+            companyName: getParameterValues('company'),
+            groupName: getParameterValues('group'),
             resetDisabled: 'true', 
             undoRedoDisabled: 'true'
         }
