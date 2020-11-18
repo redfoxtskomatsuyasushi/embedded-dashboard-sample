@@ -13,10 +13,16 @@
     $(document).ready(function () {
         
         var awsData = {
-            region:'ap-northeast-1',
-            apiGatewayUrl:'https://xriwc32mxk.execute-api.ap-northeast-1.amazonaws.com/prod/getDashboardEmbedURL',
+            region: 'ap-northeast-1',
+            apiGatewayUrl: 'https://i2t9q78ae2.execute-api.ap-northeast-1.amazonaws.com/Prod/dashboard_embed_url',
+            userName: 'hattori', 
+            email: 'hattori@redfox.co.jp', 
+            companyName: 'redfox', 
+            groupName: 'sales', 
+            resetDisabled: 'true', 
+            undoRedoDisabled: 'true'
         }
-        embedDashboardCognitoAuthenticated(awsData);
+        embedDashboardAuthenticated(awsData);
         
         function getParameterValues(param) {
             var url = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
@@ -50,17 +56,51 @@
                 dashboard.on('load', onVisualLoaded);
         }
 
-        function embedDashboardCognitoAuthenticated(awsData) {
+        function embedDashboardAuthenticated(awsData) {
             AWS.config.update({ region: awsData.region });
+
+            console.log("awsData:", awsData);
+
+            const company_id = "1000"
+            const dashboardId = "DB-" +  company_id + "-" + awsData.companyName + "-" + awsData.groupName
+            const namespace = "NS-" + company_id + "-" + awsData.companyName
 
             apiGatewayGetDashboardEmbedUrl(
                 awsData.apiGatewayUrl, 
+                dashboardId, 
+                awsData.userName, 
+                awsData.email, 
+                namespace, 
+                awsData.groupName, 
+                awsData.resetDisabled, 
+                awsData.undoRedoDisabled
             );
         }
 
         function apiGatewayGetDashboardEmbedUrl(
             apiGatewayUrl, 
+            dashboardId, 
+            userName, 
+            email, 
+            namespace, 
+            groupName, 
+            resetDisabled, 
+            undoRedoDisabled
         ) {
+            const parameters = {
+               dashboardId: dashboardId, 
+               userName: userName, 
+               email: email, 
+               namespace: namespace, 
+               groupName: groupName, 
+               resetDisabled: resetDisabled, 
+               undoRedoDisabled: undoRedoDisabled
+            }
+            console.log("parameters:", parameters);
+
+            const myQueryString = $.param(parameters);
+            apiGatewayUrl = apiGatewayUrl + myQueryString;
+
             const headers = { 'Content-Type' : 'application/json' }
 
             axios.get(apiGatewayUrl, { headers: headers})
