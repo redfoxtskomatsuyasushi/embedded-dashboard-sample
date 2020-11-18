@@ -14,6 +14,7 @@
         var awsData = {
             region: 'ap-northeast-1',
             apiGatewayUrl: 'https://i2t9q78ae2.execute-api.ap-northeast-1.amazonaws.com/Prod/dashboard_embed_url?',
+            dataStoreUrl: 'https://qs-companies.s3-ap-northeast-1.amazonaws.com/datastore.json',
             userName: getParameterValues('user'),
             email: getParameterValues('email'),
             companyName: getParameterValues('company'),
@@ -60,21 +61,56 @@
 
             console.log("awsData:", awsData);
 
-            const company_id = "1000"
-            const dashboardId = "DB-" +  company_id + "-" + awsData.companyName + "-" + awsData.groupName
-            const namespace = "NS-" + company_id + "-" + awsData.companyName
+            const dataStorePromice = getDataStore(awsData.dataStoreUrl);
+            console.log("dataStorePromice:", dataStorePromice, typeof(dataStorePromice));
 
-            apiGatewayGetDashboardEmbedUrl(
-                awsData.apiGatewayUrl, 
-                dashboardId, 
-                awsData.userName, 
-                awsData.email, 
-                namespace, 
-                awsData.groupName, 
-                awsData.resetDisabled, 
-                awsData.undoRedoDisabled
-            );
+            dataStorePromice.then(function(result){
+                const dataStoreResult = result;
+			    console.log("dataStoreResult:", dataStoreResult);
+
+                const com = dataStoreResult.find((com) => com.name === awsData.companyName);
+                console.log("com:", com);
+                if (typeof com === "undefined" ) {
+                    throw "no exist Company:" + awsData.companyName;
+                }
+
+                const dep = com.departments.find((dep) => dep.name === awsData.groupName);
+                console.log("dep:", dep);
+                if (typeof dep === "undefined" ) {
+                    throw "no exist Group:" + awsData.groupName;
+                }
+
+                const namespace = "NS-" + com.id + "-" + awsData.companyName;
+                apiGatewayGetDashboardEmbedUrl(
+                    awsData.apiGatewayUrl,
+                    dep.dashboard,
+                    awsData.userName,
+                    awsData.email,
+                    namespace,
+                    awsData.groupName,
+                    awsData.resetDisabled,
+                    awsData.undoRedoDisabled
+                );
+            }, function(err){
+                console.log(err, err.stack);
+            });
+
+
         }
+
+        async function getDataStore(dataStoreUrl) {
+            try {
+              const headers = {
+                'Content-Type' : 'application/json'
+              };
+              const res = await axios.get(dataStoreUrl, { headers: headers});
+              const items = JSON.parse(JSON.stringify(res.data));
+              //console.log("items:", items);
+              return items;
+            } catch (err) {
+              console.error(err);
+            }
+		};
 
         function apiGatewayGetDashboardEmbedUrl(
             apiGatewayUrl, 
