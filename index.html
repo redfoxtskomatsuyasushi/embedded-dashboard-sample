@@ -80,6 +80,12 @@
                     throw "no exist Group:" + awsData.groupName;
                 }
 
+                const user = dep.users.find((user) => user === awsData.userName);
+                console.log("user:", user);
+                if (typeof user === "undefined" ) {
+                    throw "no exist User:" + awsData.userName;
+                }
+
                 const namespace = "NS-" + com.id + "-" + awsData.companyName;
                 apiGatewayGetDashboardEmbedUrl(
                     awsData.apiGatewayUrl,
